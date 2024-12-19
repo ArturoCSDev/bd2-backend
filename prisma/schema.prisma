@@ -1,0 +1,343 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DIRECT_URL")
+}
+
+model Administrador {
+  id              Int                   @id @default(autoincrement()) @map("ID_Administrador")
+  nombre          String                @db.VarChar(25)
+  apellidoPaterno String                @map("Apellido_Paterno") @db.VarChar(25)
+  apellidoMaterno String?               @map("Apellido_Materno") @db.VarChar(25)
+  correo          String                @unique @db.VarChar(50)
+  contraseña     String                @db.VarChar(64)
+  idRol           Int                   @map("ID_Rol")
+  fechaCreacion   DateTime              @map("Fecha_Creacion") @db.Date
+  rol             Rol                   @relation(fields: [idRol], references: [id])
+  personal        PersonalLaboratorio[]
+
+  @@map("administrador")
+}
+
+model AnalisisClinico {
+  id                    Int                 @id @default(autoincrement()) @map("ID_Analisis_Clinico")
+  idMuestra             Int                 @map("ID_Muestra")
+  idResultadoAnalisis   Int?                @map("ID_Resultado_Analisis")
+  idPersonal            Int                 @map("ID_Personal")
+  idTipoAnalisisClinico Int                 @map("ID_Tipo_Analisis_Clinico")
+  muestra               Muestra             @relation(fields: [idMuestra], references: [id])
+  resultados            Resultados?         @relation(fields: [idResultadoAnalisis], references: [id])
+  personal              PersonalLaboratorio @relation(fields: [idPersonal], references: [id])
+  tipoAnalisis          TipoAnalisisClinico @relation(fields: [idTipoAnalisisClinico], references: [id])
+  comprobantePago       ComprobantePago[]
+
+  @@map("analisis_clinico")
+}
+
+model Boleta {
+  id            Int             @id @default(autoincrement()) @map("ID_Boleta")
+  idComprobante Int             @map("ID_Comprobante")
+  detalles      String?         @db.Text
+  comprobante   ComprobantePago @relation(fields: [idComprobante], references: [id])
+
+  @@map("boleta")
+}
+
+model ClaseAnalisisClinico {
+  id            Int                   @id @default(autoincrement())
+  nombre        String                @db.VarChar(255)
+  tiposAnalisis TipoAnalisisClinico[]
+
+  @@map("clase_analisis_clinico")
+}
+
+model ClaseProveedor {
+  id               Int            @id @default(autoincrement()) @map("ID_Proveedor")
+  nombreProveedor  String         @map("Nombre_Proveedor") @db.VarChar(25)
+  idTipoSuministro Int            @map("ID_Tipo_Suministro")
+  contacto         String?        @db.VarChar(25)
+  ordenCompra      OrdenCompra[]
+  tipoSuministro   TipoSuministro @relation(fields: [idTipoSuministro], references: [id])
+
+  @@map("clase_proveedor")
+}
+
+model ComprobantePago {
+  id                Int             @id @default(autoincrement()) @map("ID_Comprobante")
+  idAnalisisClinico Int             @map("ID_Analisis_Clinico")
+  fechaPago         DateTime        @map("Fecha_Pago") @db.Date
+  idEstadoPago      Int             @map("ID_Estado_Pago")
+  idTipoPago        Int             @map("ID_Tipo_Pago")
+  dniPaciente       String          @map("DNI_Paciente") @db.Char(8)
+  analisisClinico   AnalisisClinico @relation(fields: [idAnalisisClinico], references: [id])
+  estadoPago        EstadoPago      @relation(fields: [idEstadoPago], references: [id])
+  tipoPago          TipoPago        @relation(fields: [idTipoPago], references: [id])
+  paciente          Paciente        @relation(fields: [dniPaciente], references: [dni])
+  boletas           Boleta[]
+  facturas          Factura[]
+
+  @@map("comprobante_pago")
+}
+
+model DetallesOrdenCompra {
+  id             Int         @id @default(autoincrement()) @map("ID_Detalle")
+  idOrdenCompra  Int         @map("ID_Orden_Compra")
+  idTipoProducto Int         @map("ID_Tipo_Producto")
+  idProducto     Int         @map("ID_Producto")
+  cantidad       Int
+  ordenCompra    OrdenCompra @relation(fields: [idOrdenCompra], references: [id])
+
+  @@map("detalles_orden_compra")
+}
+
+model Equipo {
+  id                    Int                     @id @default(autoincrement()) @map("ID_Equipo")
+  idMarca               Int                     @map("ID_Marca")
+  idModelo              Int                     @map("ID_Modelo")
+  idTipoEquipo          Int                     @map("ID_Tipo_Equipo")
+  numSerieEquipo        String?                 @map("Num_Serie_Equipo") @db.VarChar(50)
+  fechaCompra           DateTime?               @map("Fecha_Compra") @db.Date
+  fechaMantenimiento    DateTime?               @map("Fecha_Mantenimiento") @db.Date
+  idEstadoEquipo        Int?                    @map("ID_Estado_Equipo")
+  marca                 Marca                   @relation(fields: [idMarca], references: [id])
+  modelo                Modelo                  @relation(fields: [idModelo], references: [id])
+  tipoEquipo            TipoEquipo              @relation(fields: [idTipoEquipo], references: [id])
+  estadoEquipo          EstadoEquipo?           @relation(fields: [idEstadoEquipo], references: [id])
+  registroMantenimiento RegistroMantenimiento[]
+
+  @@map("equipo")
+}
+
+model EstadoEquipo {
+  id          Int      @id @default(autoincrement()) @map("ID_Estado_Equipo")
+  descripcion String   @db.VarChar(50)
+  equipos     Equipo[]
+
+  @@map("estado_equipo")
+}
+
+model EstadoMaterial {
+  id                 Int                  @id @default(autoincrement()) @map("ID_Estado_Material")
+  nombre             String               @db.VarChar(25)
+  materialQuirurgico MaterialQuirurgico[]
+
+  @@map("estado_material")
+}
+
+model EstadoMuestra {
+  id       Int       @id @default(autoincrement()) @map("ID_Estado_Muestra")
+  nombre   String    @db.VarChar(25)
+  muestras Muestra[]
+
+  @@map("estado_muestra")
+}
+
+model EstadoPago {
+  id              Int               @id @default(autoincrement()) @map("ID_Estado_Pago")
+  nombre          String            @db.VarChar(25)
+  comprobantePago ComprobantePago[]
+
+  @@map("estado_pago")
+}
+
+model Factura {
+  id            Int             @id @default(autoincrement()) @map("ID_Factura")
+  idComprobante Int             @map("ID_Comprobante")
+  razonSocial   String          @map("Razon_Social") @db.VarChar(25)
+  ruc           String          @map("RUC") @db.Char(11)
+  comprobante   ComprobantePago @relation(fields: [idComprobante], references: [id])
+
+  @@map("factura")
+}
+
+model Marca {
+  id      Int      @id @default(autoincrement()) @map("ID_Marca")
+  nombre  String   @db.VarChar(50)
+  equipos Equipo[]
+
+  @@map("marca")
+}
+
+model MaterialDesechable {
+  id              Int       @id @default(autoincrement()) @map("ID_Material_Desechable")
+  cantidadStock   Int       @map("Cantidad_Stock")
+  fechaExpiracion DateTime? @map("Fecha_Expiracion") @db.Date
+
+  @@map("material_desechable")
+}
+
+model MaterialQuirurgico {
+  id               Int            @id @default(autoincrement()) @map("ID_Material_Quirurgico")
+  numSerieMaterial String         @map("Num_Serie_Material") @db.VarChar(10)
+  idMarca          Int            @map("ID_Marca")
+  fechaCompra      DateTime       @map("Fecha_Compra") @db.Date
+  idEstadoMaterial Int            @map("ID_Estado_Material")
+  unidadMedida     Int            @map("Unidad_Medida")
+  nombreMaterial   String         @map("Nombre_Material") @db.VarChar(25)
+  descripcion      String         @db.Text
+  tipoMaterial     Int            @map("Tipo_de_Material")
+  idMaterialDesReu Int            @map("ID_MaterialDesReu")
+  estadoMaterial   EstadoMaterial @relation(fields: [idEstadoMaterial], references: [id])
+
+  @@map("material_quirurgico")
+}
+
+model MaterialReutilizable {
+  id                      Int  @id @default(autoincrement()) @map("ID_Material_Reutilizable")
+  cantidadDisponible      Int  @map("Cantidad_Disponible")
+  frecuenciaMantenimiento Int? @map("Frecuencia_Mantenimiento")
+
+  @@map("material_reutilizable")
+}
+
+model Modelo {
+  id      Int      @id @default(autoincrement()) @map("ID_Modelo")
+  nombre  String   @db.VarChar(50)
+  equipos Equipo[]
+
+  @@map("modelo")
+}
+
+model Muestra {
+  id              Int               @id @default(autoincrement()) @map("ID_Muestra")
+  dniPaciente     String            @map("DNI_Paciente") @db.Char(8)
+  fechaRecepcion  DateTime          @map("Fecha_Recepcion") @db.Date
+  idEstadoMuestra Int               @map("ID_Estado_Muestra")
+  idTipoMuestra   Int               @map("ID_Tipo_Muestra")
+  paciente        Paciente          @relation(fields: [dniPaciente], references: [dni])
+  estadoMuestra   EstadoMuestra     @relation(fields: [idEstadoMuestra], references: [id])
+  tipoMuestra     TipoMuestra       @relation(fields: [idTipoMuestra], references: [id])
+  analisisClinico AnalisisClinico[]
+
+  @@map("muestra")
+}
+
+model OrdenCompra {
+  id             Int                   @id @default(autoincrement()) @map("ID_Orden_Compra")
+  idProveedor    Int                   @map("ID_Proveedor")
+  fechaOrden     DateTime              @map("Fecha_Orden") @db.Date
+  listaProductos String?               @map("Lista_Productos") @db.Text
+  proveedor      ClaseProveedor        @relation(fields: [idProveedor], references: [id])
+  detalles       DetallesOrdenCompra[]
+
+  @@map("orden_compra")
+}
+
+model Paciente {
+  dni             String            @id @map("DNI_Paciente") @db.Char(8)
+  nombre          String            @db.VarChar(25)
+  apellidoPaterno String            @map("Apellido_Paterno") @db.VarChar(25)
+  apellidoMaterno String?           @map("Apellido_Materno") @db.VarChar(25)
+  numeroTelefono  String?           @map("Numero_Telefono") @db.VarChar(15)
+  edad            Int?
+  direccion       String?           @db.VarChar(100)
+  muestras        Muestra[]
+  comprobantePago ComprobantePago[]
+
+  @@map("paciente")
+}
+
+model PersonalLaboratorio {
+  id                Int               @id @default(autoincrement()) @map("ID_Personal")
+  nombre            String            @db.VarChar(25)
+  apellido          String            @db.VarChar(25)
+  apellidoMaterno   String?           @map("Apellido_Materno") @db.VarChar(50)
+  dniPersonal       String            @unique @map("DNI_Personal") @db.Char(8)
+  especializacion   String?           @db.VarChar(50)
+  fechaContratacion DateTime          @map("Fecha_Contratacion") @db.Date
+  idAdministrador   Int               @map("ID_Administrador")
+  administrador     Administrador     @relation(fields: [idAdministrador], references: [id])
+  analisisClinico   AnalisisClinico[]
+
+  @@map("personal_laboratorio")
+}
+
+model Reagente {
+  id             Int       @id @default(autoincrement()) @map("ID_Reagente")
+  nombreReagente String    @map("Nombre_Reagente") @db.VarChar(50)
+  stock          Int
+  fechaCaducidad DateTime? @map("Fecha_Caducidad") @db.Date
+
+  @@map("reagente")
+}
+
+model RegistroMantenimiento {
+  id                    Int      @id @default(autoincrement()) @map("ID_Mantenimiento")
+  idEquipo              Int      @map("ID_Equipo")
+  fechaMantenimiento    DateTime @map("Fecha_Mantenimiento") @db.Date
+  parametrosVerificados String?  @map("Parametros_Verificados") @db.Text
+  resultadoVerificacion String?  @map("Resultado_Verificacion") @db.Text
+  equipo                Equipo   @relation(fields: [idEquipo], references: [id])
+
+  @@map("registro_mantenimiento")
+}
+
+model Resultados {
+  id              Int               @id @default(autoincrement()) @map("ID_Resultado_Analisis")
+  resultados      String?           @db.Text
+  reporte         String?           @db.VarChar(255)
+  fechaEntrega    DateTime?         @map("Fecha_Entrega") @db.Date
+  analisisClinico AnalisisClinico[]
+
+  @@map("resultados")
+}
+
+model Rol {
+  id            Int             @id @default(autoincrement()) @map("ID_Rol")
+  nombre        String          @db.VarChar(25)
+  administrador Administrador[]
+
+  @@map("rol")
+}
+
+model TipoAnalisisClinico {
+  id                     Int                   @id @default(autoincrement()) @map("ID_Tipo_Analisis_Clinico")
+  nombreAnalisis         String                @map("Nombre_Analisis") @db.VarChar(50)
+  precio                 Decimal               @db.Decimal(10, 2)
+  valorReferencia        String?               @map("Valor_Referencia") @db.Text
+  idClaseAnalisisClinico Int?                  @map("ID_clase_analisis_clinico")
+  idMaterialQuirurgico   Int?                  @map("ID_Material_Quirurgico")
+  idEquipo               Int?                  @map("ID_Equipo")
+  idReagente             Int?                  @map("ID_Reagente")
+  claseAnalisis          ClaseAnalisisClinico? @relation(fields: [idClaseAnalisisClinico], references: [id])
+  analisisClinico        AnalisisClinico[]
+
+  @@map("tipo_analisis_clinico")
+}
+
+model TipoEquipo {
+  id                    Int      @id @default(autoincrement()) @map("ID_Tipo_Equipo")
+  descripcionTipoEquipo String?  @map("Descripcion_Tipo_Equipo") @db.VarChar(50)
+  equipos               Equipo[]
+
+  @@map("tipo_equipo")
+}
+
+model TipoMuestra {
+  id       Int       @id @default(autoincrement()) @map("ID_Tipo_Muestra")
+  nombre   String    @db.VarChar(25)
+  muestras Muestra[]
+
+  @@map("tipo_muestra")
+}
+
+model TipoPago {
+  id           Int               @id @default(autoincrement()) @map("ID_Tipo_Pago")
+  metodoPago   String            @map("Metodo_Pago") @db.VarChar(25)
+  comprobantes ComprobantePago[]
+
+  @@map("tipo_pago")
+}
+
+model TipoSuministro {
+  id          Int              @id @default(autoincrement()) @map("ID_Tipo_Suministro")
+  proveedores ClaseProveedor[]
+
+  @@map("tipo_suministro")
+}
